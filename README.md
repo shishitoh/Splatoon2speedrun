@@ -6,9 +6,3 @@ get Splatoon 2 IL records from [Speedrun.com REST API](https://github.com/speedr
 
 - requests
 - openpyxl
-
-## how to use
-
-1. pip install requests openpyxl
-2. python Herorec.py
-3. open HeromodeILrecords.xlsx

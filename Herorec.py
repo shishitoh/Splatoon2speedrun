@@ -32,11 +32,10 @@ class HeroRec():
 
     def sheetsetup(self):
         # level
-        tmp = [3, 6, 6, 6, 6]
         n = 0
         level = 1
         for i in range(5):
-            for _ in range(tmp[i]):
+            for _ in range([3, 6, 6, 6, 6][i]):
                 self.cell(n, -1).value = f"{level:0>2}"
                 self.cell(n, 11).value = f"{level:0>2}"
                 n += 1
@@ -44,16 +43,19 @@ class HeroRec():
             self.cell(n, -1).value = f"Boss{i+1}"
             self.cell(n, 11).value = f"Boss{i+1}"
             n += 1
+        self.cell(n, -1).value = "sum"
+        self.cell(n, 11).value = "sum"
         # weapon
         for m in range(9):
             self.cell(-1, m).value = self.weaponlist[m]
+        self.cell(-1, 9).value = "sum"
         self.cell(-1, 12).value = "WR"
         self.cell(-1, 13).value = "weapon"
         # format
-        for n in range(32):
-            for m in range(9):
+        for n in range(32+1):
+            for m in range(9+1):
                 self.cell(n, m).number_format = "[mm]:ss"
-            self.cell(n, 11).number_format = "[mm]:ss"
+            self.cell(n, 12).number_format = "[mm]:ss"
 
     def getrec(self, levelnum):
         levelurl = f"https://www.speedrun.com/api/v1/runs?status=verified&max=200&level={self.levelidlist[levelnum]}" # first page url
@@ -106,43 +108,68 @@ class HeroRec():
         self.opensheet()
         WRlist = [None]*32
         for n in range(32):
-            print(f"get records in {self.levellist[n]}")
             WRlist[n] = self.getrec(n)
+            print(f"{self.levellist[n]} done")
 
-        # convert to datetime.time
-        for n in range(32):
-            for m in range(9):
-                if WRlist[n][m]: # has value
-                    WRlist[n][m] = datetime.time(
-                        WRlist[n][m]//3600,
-                        WRlist[n][m]%3600//60,
-                        WRlist[n][m]%60
-                    )
+        def inttotime(t):
+            s = datetime.time(
+                t//3600,
+                t%3600//60,
+                t%60
+            )
+            return s
 
         # find new record
         for n in range(32):
             for m in range(9):
                 if WRlist[n][m]:
                     if self.cell(n, m).value:
-                        if WRlist[n][m] < self.cell(n, m).value:
-                            print(f"New record! {self.levellist[n]} {self.weaponlist[m]}, {WRlist[n][m].hour*60+WRlist[n][m].minute:0>2}:{WRlist[n][m].second:0>2}")
+                        if inttotime(WRlist[n][m]) < self.cell(n, m).value:
+                            print(f"New record! {self.levellist[n]} {self.weaponlist[m]}, {WRlist[n][m]//60:0>2}:{WRlist[n][m]%60:0>2}")
                     else:
-                        print(f"New record! {self.levellist[n]} {self.weaponlist[m]}, {WRlist[n][m].hour*60+WRlist[n][m].minute:0>2}:{WRlist[n][m].second:0>2}")
+                        print(f"New record! {self.levellist[n]} {self.weaponlist[m]}, {WRlist[n][m]//60:0>2}:{WRlist[n][m]%60:0>2}")
+
+        # データの整形
+        awWRlist = []
+        for n in range(32):
+            tmp = [WRlist[n][m] for m in range(9) if WRlist[n][m]]
+            if tmp:
+                awWRlist.append(min(tmp))
+            else:
+                awWRlist.append(False)
+        if all(awWRlist):
+            awWRlist.append(sum(awWRlist))
+        for n in range(32):
+            if all(WRlist[n]):
+                WRlist[n].append(sum(WRlist[n]))
+            else:
+                WRlist[n].append(False)
+        WRlist.append([])
+        for m in range(9+1):
+            tmp = [WRlist[n][m] for n in range(32)]
+            if all(tmp):
+                WRlist[32].append(sum(tmp))
+            else:
+                WRlist[32].append(False)
 
         # renew records in Excel file
-        for n in range(32):
-            for m in range(9):
+        for n in range(32+1):
+            for m in range(9+1):
                 if WRlist[n][m]:
-                    self.cell(n, m).value = WRlist[n][m]
+                    self.cell(n, m).value = inttotime(WRlist[n][m])
                 else:
-                    self.cell(n, m).value = None
-            if any(WRlist[n]): # any weapon records
-                tmp = [WRlist[n][m] for m in range(9) if WRlist[n][m]] #exclude False
-                self.cell(n, 12).value = min(tmp)
-                self.cell(n, 13).value = self.weaponlist[tmp.index(min(tmp))]
+                    self.cell(n, m).value = ""
+            if awWRlist[n]:
+                self.cell(n, 12).value = inttotime(awWRlist[n])
+            else:
+                self.cell(n, 12).value = ""
+        for n in range(32):
+            self.cell(n, 13).value = self.weaponlist[WRlist[n].index(awWRlist[n])]
+
 
         self.cell(-1, -1).value = datetime.datetime.now().strftime("%Y/%m/%d")
         self.wb.save("HeromodeILrecords.xlsx")
+
 
 
 if __name__ == "__main__":

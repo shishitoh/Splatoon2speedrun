@@ -139,6 +139,8 @@ class HeroRec():
                 awWRlist.append(False)
         if all(awWRlist):
             awWRlist.append(sum(awWRlist))
+        else:
+            awWRlist.append(False)
         for n in range(32):
             if all(WRlist[n]):
                 WRlist[n].append(sum(WRlist[n]))

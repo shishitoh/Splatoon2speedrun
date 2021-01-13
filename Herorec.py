@@ -9,8 +9,9 @@ import os
 
 class HeroRec():
     def __init__(self):
+        self.dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         try:
-            with open(os.path.dirname(os.path.abspath(sys.argv[0])) + "/config.json", mode="r") as jf:
+            with open(self.dirpath + "/config.json", mode="r") as jf:
                 df = json.load(jf)
                 self.levellist = df["levellist"]
                 self.levelidlist = df["levelidlist"]
@@ -23,7 +24,7 @@ class HeroRec():
 
     def opensheet(self):
         try:
-            wbpath = os.path.dirname(os.path.abspath(sys.argv[0])) + "/HeromodeILrecords.xlsx"
+            wbpath = self.dirpath + "/HeromodeILrecords.xlsx"
             self.wb = openpyxl.load_workbook(wbpath)
             self.ws = self.wb.worksheets[0]
         except FileNotFoundError:  # file is not exist
@@ -66,8 +67,15 @@ class HeroRec():
             self.cell(n, 12).number_format = "[mm]:ss"
 
     def getrec(self, levelnum):
-        levelurl = f"https://www.speedrun.com/api/v1/runs?status=verified&max=200&level={self.levelidlist[levelnum]}"  # first page url
-        leveldata = []  # runデータは一度に200個までしか入手できないので200個ずつ取得してleveldataにまとめて格納しておく
+        # first page url
+        levelurl = (
+            f"https://www.speedrun.com/api/v1/runs"
+            f"?status=verified"
+            f"&max=200"
+            f"&level={self.levelidlist[levelnum]}"
+        )
+        leveldata = []
+        # runデータは一度に200個までしか入手できないので200個ずつ取得してleveldataにまとめて格納しておく
         while True:
             response = requests.get(levelurl)
             response.raise_for_status()
@@ -80,7 +88,7 @@ class HeroRec():
                 if link["rel"] == "next":
                     levelurl = link["uri"]  # get next page url
                     break
-            else: # next page is not exist
+            else:  # next page is not exist
                 break
 
         # assort by weapon
@@ -125,9 +133,9 @@ class HeroRec():
 
         def inttotime(t):
             s = datetime.time(
-                t//3600, # hour
-                t%3600//60, # minute
-                t%60, # second
+                t // 3600,  # hour
+                (t % 3600) // 60,  # minute
+                t % 60,  # second
             )
             return s
 
@@ -137,14 +145,23 @@ class HeroRec():
                 if WRlist[n][m]:
                     if self.cell(n, m).value:
                         if inttotime(WRlist[n][m]) < self.cell(n, m).value:
-                            print(f"New record! {self.levellist[n]} {self.weaponlist[m]}, {WRlist[n][m]//60:0>2}:{WRlist[n][m]%60:0>2}")
+                            print(
+                                f"New record! "
+                                f"{self.levellist[n]} {self.weaponlist[m]}, "
+                                f"{WRlist[n][m]//60:0>2}:{WRlist[n][m]%60:0>2}"
+                            )
                     else:
-                        print(f"New record! {self.levellist[n]} {self.weaponlist[m]}, {WRlist[n][m]//60:0>2}:{WRlist[n][m]%60:0>2}")
+                        print(
+                            f"New record! "
+                            f"{self.levellist[n]} {self.weaponlist[m]}, "
+                            f"{WRlist[n][m]//60:0>2}:{WRlist[n][m]%60:0>2}"
+                        )
 
         # データの整形
         awWRlist = []  # any weapon WR
         for n in range(32):
-            tmp = [WRlist[n][m] for m in range(9) if WRlist[n][m]] # exclude False
+            # exclude False from WRlist[n][m]
+            tmp = [WRlist[n][m] for m in range(9) if WRlist[n][m]]
             if tmp:
                 awWRlist.append(min(tmp))
             else:
@@ -180,7 +197,8 @@ class HeroRec():
             else:
                 self.cell(n, 12).value = ""
         for n in range(32):
-            self.cell(n, 13).value = self.weaponlist[WRlist[n].index(awWRlist[n])]
+            WRweaponindex = WRlist[n].index(awWRlist[n])
+            self.cell(n, 13).value = self.weaponlist[WRweaponindex]
 
         self.cell(-1, -1).value = datetime.datetime.now().strftime("%Y/%m/%d")
         self.wb.save("HeromodeILrecords.xlsx")

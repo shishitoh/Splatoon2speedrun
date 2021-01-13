@@ -153,7 +153,10 @@ class HeroRec():
             awWRlist.append(sum(awWRlist))
         else:
             awWRlist.append(False)
+<<<<<<< HEAD
         # sum of all weapon records
+=======
+>>>>>>> 289440d7cab9547f188fe39a87e1bff4bbfe897d
         for n in range(32):
             if all(WRlist[n]):
                 WRlist[n].append(sum(WRlist[n]))

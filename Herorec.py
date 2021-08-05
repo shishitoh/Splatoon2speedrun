@@ -18,7 +18,7 @@ class HeroRec():
                 self.weaponid = df["weaponid"]
                 self.weaponlist = df["weaponlist"]
                 self.weaponiddict = df["weaponiddict"]
-                self.invalidrunlist = df["invalidrunlist"]  # not used
+                self.invalidrunlist = df["invalidrunlist"]  # empty now
         except FileNotFoundError:
             sys.exit("config.json does not found.")
 
@@ -128,8 +128,8 @@ class HeroRec():
         WRlist = [None]*32
         print("get all records from Speedrun.com.")
         for n in range(32):
+            print(f"checking {self.levellist[n]}.")
             WRlist[n] = self.getrec(n)
-            print(f"{self.levellist[n]} done.")
 
         def inttotime(t):
             s = datetime.time(
